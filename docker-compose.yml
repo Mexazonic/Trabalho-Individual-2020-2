@@ -1,0 +1,14 @@
+version: '3.7'
+services: 
+  app:
+    container_name: 'client'
+    build:
+      context: ./client/
+      target: 'develop-stage'
+      dockerfile: Dockerfile
+    ports:
+      - '8080:8080'
+    volumes:
+      - './client:/client'
+    command: /bin/sh -c "yarn && quasar dev"
+  
