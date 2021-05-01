@@ -1,14 +1,53 @@
 version: '3.7'
+    
 services: 
-  app:
-    container_name: 'client'
+
+  db:
+    container_name: 'postgres'
+    restart: 'always'
     build:
-      context: ./client/
-      target: 'develop-stage'
-      dockerfile: Dockerfile
+      context: ./api
+      dockerfile: db.Dockerfile
     ports:
-      - '8080:8080'
+      - 5432:5432 
+    environment:
+      - POSTGRES_DB=myproject
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=password
+      - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
-      - './client:/client'
-    command: /bin/sh -c "yarn && quasar dev"
+      - ./data/db:/var/lib/postgresql/data  
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h db -U myuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   
+  api:
+    container_name: "djapi"
+    build: 
+      context: ./api/
+      dockerfile: Dockerfile
+    command: ["sh", "apiStart.sh"]
+    volumes:
+      - ./api:/api
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+    links:
+      - db:db
+        
+
+  app:
+      container_name: 'client'
+      build:
+        context: ./client/
+        target: 'develop-stage'
+        dockerfile: Dockerfile
+      ports:
+        - '8080:8080'
+      volumes:
+        - './client:/client'
+      command: /bin/sh -c "yarn && quasar dev"
+
