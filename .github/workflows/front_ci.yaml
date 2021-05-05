@@ -1,0 +1,49 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    branches:
+      - master
+      - develop
+  push:
+    branches:
+      - master
+      - develop
+
+jobs:
+  front-end-ci:
+    name: front-end-tasks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: build client
+        run: docker-compose up --build -d client
+      - name: Cache dependency
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Lint Syntax Verify
+        run: docker-compose run client yarn lint
+      - name: Run Tests
+        run: docker-compose run client npm run test:unit:ci
+      - name: Run Coverage
+        run: docker-compose run client npm run test:unit:coverage
+
+  deploy-front-cd:
+    runs-on: ubuntu-latest
+    steps:
+      - name: front-end-cd-taks
+        uses: actions/checkout@v2
+      - name: Push to registry
+        uses: gonuit/heroku-docker-deploy@v1.3.2
+        with:
+          email: ${{ secrets.HEROKU_EMAIL }}
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME_API_FRONTEND }}
+          dockerfile_directory: ./client
+          dockerfile_name: Dockerfile.Prod
+          docker_options: "--no-cache"
+          process_type: web
