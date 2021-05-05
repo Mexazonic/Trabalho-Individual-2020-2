@@ -3,8 +3,8 @@ name: Pipeline Back
 on:
   pull_request:
     branches:
-      - develop
       - master
+      - develop
   push:
     branches:
       - master
@@ -31,11 +31,12 @@ jobs:
       - name: Tests
         run: docker-compose run api python3 manage.py test
 
-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Push to heroku  
         uses: actions/checkout@v2
+      - name: heroku deploy step 
         uses: gonuit/heroku-docker-deploy@v1.3.2
         with:
           email: ${{ secrets.HEROKU_EMAIL }}
