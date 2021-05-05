@@ -1,10 +1,15 @@
-FROM python:3
-# Setting PYTHONUNBUFFERED to a non empty value ensures that the python output is sent straight to terminal (e.g. your container log) without being first buffered
+FROM python:3.8
+
 ENV PYTHONUNBUFFERED=1
-WORKDIR /api
-# Copy all code files to inside the container
-COPY requirements.txt api task manage.py /api/
-RUN apt update && \
-    apt install -y netcat-openbsd && \
-    pip3 install --upgrade pip && \
-    pip3 install -r requirements.txt
+
+WORKDIR /app
+
+COPY requirements.txt /app/
+
+RUN pip3 install -r requirements.txt
+
+COPY . /app/
+
+EXPOSE 8000
+
+CMD ["sh", "-c", "python3 manage.py migrate && python3 manage.py runserver 0.0.0.0:$PORT"]
